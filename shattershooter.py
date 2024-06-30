@@ -6,12 +6,12 @@ win = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 
 class Enemy():
-    def __init__(self, x, y, player, w, h):
+    def __init__(self, x, y, player, w, h, hp):
         self.default_image = pygame.transform.scale(pygame.image.load("Lemon.png"), (w, h))
         self.default_image = pygame.transform.rotate(self.default_image, -90)
+        self.hp = hp
         self.image = self.default_image
         self.rect = self.image.get_rect()
-        print(self.rect.w, self.rect.h)
         self.rect.x = x
         self.rect.y = y
         mx, my = player.rect.centerx, player.rect.centery
@@ -19,7 +19,7 @@ class Enemy():
         dy = my - self.rect.centery
         if self.rect.w == 140 and self.rect.h == 200:  
             angle = math.degrees(math.atan2(-dy, dx))
-        if self.rect.w == 70 and self.rect.h == 100:
+        else:
             angle = random.randint(0, 360)
         self.hor = math.cos(math.radians(angle)) * 2
         self.ver = -math.sin(math.radians(angle)) * 2
@@ -153,13 +153,14 @@ ship = Ship(200, 200)
 def Lemon_Spawner():
     location = random.choice(["left", "right","up","down"])
     if location == "left":
-        return Enemy(-200, random.randint(0, 600), ship, 200, 140)
+        return Enemy(-200, random.randint(0, 600), ship, 200, 140, 15)
     if location == "right":
-        return Enemy(950, random.randint(0, 600), ship, 200, 140)
+        return Enemy(950, random.randint(0, 600), ship, 200, 140, 15)
     if location == "up":
-        return Enemy(random.randint(0, 800), -100, ship, 200, 140)
+        return Enemy(random.randint(0, 800), -100, ship, 200, 140, 15)
     if location == "down":
-        return Enemy(random.randint(0, 800), 700, ship, 200, 140)
+        return Enemy(random.randint(0, 800), 700, ship, 200, 140, 15)
+
 
 enemies = []
 
@@ -168,6 +169,13 @@ frames = 0
 
 run = True
 spawn_time = 300
+
+BIG_EX = pygame.transform.scale(pygame.image.load("Flash.png"), (500, 500))
+draw_frames = 0
+rect = BIG_EX.get_rect()
+
+
+
 while run:
     frames += 1
     if frames >= spawn_time:
@@ -191,21 +199,39 @@ while run:
         for b in ship.bullets:
             if e.rect.colliderect(b.rect):
                 ship.bullets.remove(b)
-                enemies.remove(e)
-                if e.rect.w == 140 and e.rect.h == 200:  
-                    for ee in range(5):
-                        ee = Enemy(e.rect.x, e.rect.y, ship, 100, 70)
-                        enemies.append(ee)
-                        print('heloo')
+                if e.hp > 1:
+                    e.hp -= 1
+                else:
+                    enemies.remove(e)
+                    draw_frames = 30   
+                    death_pos = (e.rect.x, e.rect.y)   
+                    width = e.rect.w
+                    height = e.rect.h     
+
+                    if e.rect.w == 140 and e.rect.h == 200:  
+                        for ee in range(3):
+                            ee = Enemy(e.rect.x, e.rect.y, ship, 100, 70, 5)
+                            enemies.append(ee)
+                    if e.rect.w == 70 and e.rect.h == 100:
+                        for eee in range(5):
+                            eee = Enemy(ee.rect.x, ee.rect.y, ship, 50, 35, 1)
+                            enemies.append(eee)
+
 
                 break
     
+    draw_frames -= 1
 
     win.fill((46, 43, 43))
     ship.draw(win)
     for e in enemies:
         e.draw(win)
-    
+    if draw_frames > 0:
+        if width == 140 and height == 200: 
+            win.blit(BIG_EX, (death_pos[0] - 250, death_pos[1] - 250))
+
+
 
     pygame.display.update()
     clock.tick(30)
+
